@@ -1,0 +1,57 @@
+group = 'producer_kafka_java'
+
+buildDir = "/tmp/build/$group"
+
+apply plugin: 'java'
+apply plugin: 'idea'
+
+idea {
+    module {
+        inheritOutputDirs = true
+        downloadJavadoc = false
+        downloadSources = false
+    }
+}
+
+//sourceCompatibility = 1.21
+//targetCompatibility = 1.21
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(11)
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+def deploy = false
+
+dependencies {
+    if (deploy) {
+        compileOnly group: 'org.apache.kafka', name: 'kafka-clients', version: '2.5.0'
+        compileOnly group: 'org.apache.hadoop', name: 'hadoop-client', version: '3.0.0'
+    } else {
+        implementation group: 'org.apache.kafka', name: 'kafka-clients', version: '2.5.0'
+        implementation group: 'org.apache.hadoop', name: 'hadoop-client', version: '3.0.0'
+    }
+}
+
+task uberJar(type: Jar) {
+    archiveBaseName.set("producer_kafka_java")
+    manifest {
+        attributes	'Implementation-Title': 'Teste producer Kafka Java',
+                //'Implementation-Version': version,
+                'Built-Date': System.currentTimeMillis(),
+                'Java-JDK': System.getProperty('java.version'),
+                'Java-Vendor': System.getProperty('java.vm.vendor'),
+                //'Scala-SDK': scalaVersion,
+                'UUID': UUID.randomUUID().toString().toUpperCase(),
+                'Main-Class': 'ProducerKafkaJava'
+    }
+    from sourceSets.main.output
+    dependsOn configurations.runtimeClasspath
+    from { configurations.runtimeClasspath.findAll { it.name.endsWith('jar') }.collect { zipTree(it) }}
+    duplicatesStrategy(DuplicatesStrategy.EXCLUDE)
+}
